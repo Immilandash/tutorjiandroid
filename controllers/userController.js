@@ -1,6 +1,6 @@
-import User from '../models/users.js';
-import path from 'path';
+import User from '../models/user.js';
 import multer from 'multer';
+import path from 'path';
 
 // Configure multer for file storage
 const storage = multer.diskStorage({
@@ -8,7 +8,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -18,19 +18,15 @@ const upload = multer({
     cb(null, true);
   },
 });
+
 export { upload };
 
 // Controller to handle image upload
 export const uploadProfile = async (req, res) => {
   try {
-    const { name, email, whatsappNumber, altMobileNumber, address, zipCode, aadharNumber, date, profilePicture } = req.body;
+    const { name, email, whatsappNumber, altMobileNumber, address, zipCode, aadharNumber, date } = req.body;
 
-    // If `profilePicture` is not a file, save the URL
-    if (!profilePicture && !req.file) {
-      return res.status(400).json({ message: 'No profile picture provided' });
-    }
-
-    const profilePicPath = req.file ? req.file.filename : profilePicture;
+    const profilePicPath = req.file ? req.file.filename : null;
 
     const newUser = new User({ name, email, whatsappNumber, altMobileNumber, address, zipCode, aadharNumber, date, profilePicture: profilePicPath });
     await newUser.save();
@@ -42,53 +38,46 @@ export const uploadProfile = async (req, res) => {
   }
 };
 
-
-
-
-
-
-// Controller to get all images
+// Controller to get all users
 export const getProfile = async (req, res) => {
   try {
     const users = await User.find();
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching images', error });
+    res.status(500).json({ message: 'Error fetching users', error });
   }
 };
 
-
-
+// Controller to get user by ID
 export const getProfileById = async (req, res) => {
   try {
-    const userId = req.params.id; // Get the user ID from the request parameters
-    const user = await user.findById(userId); // Find user by ID in the database
+    const userId = req.params.id;
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'user not found' }); // If user is not found
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json(user); // Send the user data if found
+    res.status(200).json(user);
   } catch (error) {
-    console.error("Error fetching user by ID:", error);
+    console.error('Error fetching user by ID:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Update a user profile by ID
+// Controller to update a user profile by ID
 export const editedUserProfile = async (req, res) => {
   const userId = req.params.id;
   const updatedData = req.body;
 
-  // Check if a new profile picture was uploaded
   if (req.file) {
-    updatedData.profilePicture = req.file.filename; // Save file name to `profilePicture` field
+    updatedData.profilePicture = req.file.filename;
   }
 
   try {
-    const updateduser = await User.findByIdAndUpdate(userId, updatedData, { new: true });
-    res.json(updateduser);
+    const updatedUser = await User.findByIdAndUpdate(userId, updatedData, { new: true });
+    res.json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: "Error updating user", error });
+    res.status(500).json({ message: 'Error updating user', error });
   }
 };
